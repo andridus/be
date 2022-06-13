@@ -4,7 +4,7 @@ defmodule Be.Component do
   defmacro __using__(_opts) do
     quote do
       use Phoenix.LiveComponent
-      @before_compile UI.Component
+      @before_compile Be.Component
       import Be.View
       Module.register_attribute(__MODULE__, :file_path, [])
       Module.register_attribute(__MODULE__, :npm_import, accumulate: true)
