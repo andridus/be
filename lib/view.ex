@@ -565,7 +565,7 @@ defmodule Be.View do
     [String.replace(content, "$(", "get_opts(@__fields__, ")]
   end
   def c(opts) do
-    LiveView.Helpers.live_component(Map.merge(opts, %{id: C4.Helpers.unique(10)}))
+    LiveView.Helpers.live_component(Map.merge(opts, %{id: Be.unique(10)}))
   end
 
   def get_paths(uri, params \\ %{}) do

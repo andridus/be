@@ -63,7 +63,7 @@ defmodule Be.Schema do
 
             {field, [when: opts]}, acc ->
               Enum.reduce(opts, false, fn
-                {k, v}, acc -> C4.Value.get(attrs, k) == v
+                {k, v}, acc -> Value.get(attrs, k) == v
                 _, acc -> acc
               end)
               |> if do
@@ -133,7 +133,7 @@ defmodule Be.Schema do
 
             {field, [when: opts]}, acc ->
               Enum.reduce(opts, false, fn
-                {k, v}, acc -> C4.Value.get(attrs, k) == v
+                {k, v}, acc -> Value.get(attrs, k) == v
                 _, acc -> acc
               end)
               |> if do
