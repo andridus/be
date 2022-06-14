@@ -62,13 +62,14 @@ defmodule Be.View do
           case is_function(func, 2) && func.(socket.assigns, params) do
             {data, command} ->
               ## clean cant change assigns
-              data = clean_assigns(data)
               ## Apply commands on data
-              {data,
+              socket =
                 data
+                |> clean_assigns()
                 |> then(& assign(socket, &1))
                 |> apply_command(command, @commands, @javascripts)
-              }
+              {clean_assigns(socket.assigns), socket}
+
             data when is_map(data) ->
               {clean_assigns(data), socket}
             false ->
