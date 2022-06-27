@@ -62,9 +62,15 @@ defmodule Be.Api do
 
       def update(%Ecto.Changeset{} = model),
         do: model |> repo().update()
+      def update(%{"id" => id} = model) do
+        params = Map.drop(model, ["id"])
+        __update_model__(id, params)
+      end
       def update(%{id: id} = model) do
         params = Map.drop(model, [:id])
-
+        __update_model__(id, params)
+      end
+      defp __update_model__(id, params) do
         id
         |> get!()
         |> schema().changeset_update(params)
