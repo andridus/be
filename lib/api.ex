@@ -59,6 +59,11 @@ defmodule Be.Api do
         |> schema().changeset_insert(params)
         |> repo().insert()
       end
+      def exists?(params) do
+        params
+        |> default_params()
+        |> repo().exists?()
+      end
 
       def update(%Ecto.Changeset{} = model),
         do: model |> repo().update()
