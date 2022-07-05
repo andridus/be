@@ -1,5 +1,6 @@
 defmodule Be.Schema do
   @moduledoc false
+
   @live_opts [:required, :unique, :update,  :size, :set_once, :to_json, :label, :opts, :applies, :validate]
   @relation_opts @live_opts ++ [ :show, :show_in_form, :parent_field, :form, :options, :class, :relation, :assoc, :default, :schema ]
 
@@ -378,7 +379,16 @@ defmodule Be.Schema do
   end
 
   defp get_opts(opts, default \\ @live_opts) do
-    Keyword.drop(opts, default)
+    removable_fields =
+      Keyword.keys(opts)
+      |> Enum.filter(&(
+        &1
+        |> to_string()
+        |> String.starts_with?("_")
+      ))
+      |> Kernel.++(default)
+      |> Enum.uniq()
+    Keyword.drop(opts, removable_fields)
   end
 
   def precast(fields, attrs) do
