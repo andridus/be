@@ -173,9 +173,10 @@ defmodule Be.Schema do
 
       defimpl Jason.Encoder, for: unquote(module) do
         def encode(struct, opts) do
-          value = map_excluded_unload_assoc(struct,unquote(module).__fields__() ++ [:id])
-          Jason.Encode.map(value, opts)
-
+          value
+          |> Map.drop([:__meta__, :__struct__])
+          |> Enum.reject(&match?({_, %Ecto.Association.NotLoaded{}}, &1))
+          |> Jason.Encode.keyword(opts)
         end
       end
       defimpl Phoenix.HTML.Safe, for: __MODULE__ do
