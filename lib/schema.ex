@@ -30,14 +30,14 @@ defmodule Be.Schema do
     quote do
       module = unquote(module)
       defp maybe_apply_opts(model, field), do: maybe_apply_opts(model, field, :private)
-      def __live_fields__(), do: @live_fields |> Enum.reverse()
-      def __assoc_fields__(), do: @live_fields |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
-      def __fields__(), do: @live_fields |> Enum.reverse() |> Enum.map(&elem(&1, 0))
-      def __custom_opts__(), do: @custom_opts
-      def __json__(), do: @fields_to_json |> Enum.reverse() |> Kernel.++([:id])
-      def __update_fields__(), do: @update_fields |> Enum.reverse()
-      def __required_fields__(), do: @required_fields |> Enum.reverse()
-      def __unique_fields__(), do: @unique_fields |> Enum.reverse()
+      def __live_fields__(), do: @__live_fields__ |> Enum.reverse()
+      def __assoc_fields__(), do: @__live_fields__ |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
+      def __fields__(), do: @__live_fields__ |> Enum.reverse() |> Enum.map(&elem(&1, 0))
+      def __custom_opts__(), do: @__custom_opts__
+      def __json__(), do: @__fields_to_json__ |> Enum.reverse() |> Kernel.++([:id])
+      def __update_fields__(), do: @__update_fields__ |> Enum.reverse()
+      def __required_fields__(), do: @__required_fields__ |> Enum.reverse()
+      def __unique_fields__(), do: @__unique_fields__ |> Enum.reverse()
 
       defp changeset_(model, attrs, :insert) do
 
