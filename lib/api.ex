@@ -97,6 +97,9 @@ defmodule Be.Api do
                   value = "%#{value}%"
                   sch |> where([p], ilike(field(p, ^key), ^value))
 
+                {{:in, key}, value}, sch ->
+                  sch |> where([p], field(p, ^key) in ^value)
+
                 {key, nil}, sch ->
                   sch |> where([p], is_nil(field(p, ^key)))
 
@@ -109,6 +112,9 @@ defmodule Be.Api do
                   {{:ilike, key}, value}, sch ->
                     value = "%#{value}%"
                     sch |> or_where([p], ilike(field(p, ^key), ^value))
+
+                  {{:in, key}, value}, sch ->
+                    sch |> or_where([p], field(p, ^key) in ^value)
 
                   {key, nil}, sch ->
                     sch |> or_where([p], is_nil(field(p, ^key)))
