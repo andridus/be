@@ -122,7 +122,7 @@ defmodule Be.Api do
           {:preload, params}, sch ->
             lst = Enum.reduce(params, [], fn
               {k, v}, acc ->
-                {_k, _t, opts} = schema().__fields__() |> List.keyfind!(k,0)
+                {_k, _t, opts} = schema().__live_fields__() |> List.keyfind!(k,0)
                 [{k, default_params(v, opts[:schema])} | acc]
               k, acc when is_atom(k) ->
                 [k | acc]
