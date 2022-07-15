@@ -8,12 +8,12 @@ defmodule Be.Schema do
     quote do
       use Ecto.Schema
       @behaviour Access
-      Module.register_attribute(__MODULE__, :live_fields, accumulate: true)
-      Module.register_attribute(__MODULE__, :custom_opts, [])
-      Module.register_attribute(__MODULE__, :fields_to_json, accumulate: true)
-      Module.register_attribute(__MODULE__, :required_fields, accumulate: true)
-      Module.register_attribute(__MODULE__, :update_fields, accumulate: true)
-      Module.register_attribute(__MODULE__, :unique_fields, accumulate: true)
+      Module.register_attribute(__MODULE__, :__live_fields__, accumulate: true)
+      Module.register_attribute(__MODULE__, :__custom_opts__, [])
+      Module.register_attribute(__MODULE__, :__fields_to_json__, accumulate: true)
+      Module.register_attribute(__MODULE__, :__required_fields__, accumulate: true)
+      Module.register_attribute(__MODULE__, :__update_fields__, accumulate: true)
+      Module.register_attribute(__MODULE__, :__unique_fields__, accumulate: true)
 
       import Ecto.Changeset
       import Be.Schema
@@ -212,7 +212,7 @@ defmodule Be.Schema do
     quote do
       Module.put_attribute(
         __MODULE__,
-        :live_fields,
+        :__live_fields__,
         {unquote(name), :relation_type, unquote(opts) ++ [schema: unquote(queryable)]}
       )
 
@@ -235,7 +235,7 @@ defmodule Be.Schema do
     quote do
       Module.put_attribute(
         __MODULE__,
-        :live_fields,
+        :__live_fields__,
         {unquote(name), :relation_type, unquote(opts) ++ [schema: unquote(queryable)]}
       )
 
@@ -258,7 +258,7 @@ defmodule Be.Schema do
     quote do
       Module.put_attribute(
         __MODULE__,
-        :live_fields,
+        :__live_fields__,
         {unquote(name), :relation_type, unquote(opts) ++ [schema: unquote(queryable)]}
       )
 
@@ -275,7 +275,7 @@ defmodule Be.Schema do
     quote do
       Module.put_attribute(
         __MODULE__,
-        :live_fields,
+        :__live_fields__,
         {unquote(name), :relation_type, unquote(opts)}
       )
 
@@ -290,7 +290,7 @@ defmodule Be.Schema do
     only_opts = get_opts(opts, @relation_opts)
 
     quote do
-      Module.put_attribute(__MODULE__, :live_fields, {unquote(name), :embed, unquote(opts)})
+      Module.put_attribute(__MODULE__, :__live_fields__, {unquote(name), :embed, unquote(opts)})
       field = {:embeds_many, unquote(name), unquote(queryable), unquote(opts)}
 
       Ecto.Schema.__embeds_many__(
@@ -313,7 +313,7 @@ defmodule Be.Schema do
         do:
           Module.put_attribute(
             __MODULE__,
-            :live_fields,
+            :__live_fields__,
             {unquote(name), :embed, unquote(opts) ++ [schema: unquote(queryable)]}
           )
 
@@ -334,10 +334,10 @@ defmodule Be.Schema do
       inserted_at = Keyword.get(timestamps, :inserted_at, :inserted_at)
       updated_at = Keyword.get(timestamps, :updated_at, :updated_at)
 
-      Module.put_attribute( __MODULE__,:live_fields,
+      Module.put_attribute( __MODULE__,:__live_fields__,
             {inserted_at, :timestamp, [timestamp: true]}
           )
-      Module.put_attribute( __MODULE__,:live_fields,
+      Module.put_attribute( __MODULE__,:__live_fields__,
             {updated_at, :timestamp, [timestamp: true]}
           )
       timestamps()
@@ -346,7 +346,7 @@ defmodule Be.Schema do
 
   defmacro custom_opts(opts \\ []) do
     quote do
-      Module.put_attribute(__MODULE__, :custom_opts, unquote(opts))
+      Module.put_attribute(__MODULE__, :__custom_opts__, unquote(opts))
     end
   end
 
@@ -363,15 +363,15 @@ defmodule Be.Schema do
       opts = unquote(opts)
 
       if opts[:required],
-        do: Module.put_attribute(module, :required_fields, {name, opts[:required]})
+        do: Module.put_attribute(module, :__required_fields__, {name, opts[:required]})
 
-      if opts[:unique], do: Module.put_attribute(module, :unique_fields, name)
-      if !opts[:json], do: Module.put_attribute(module, :fields_to_json, name)
+      if opts[:unique], do: Module.put_attribute(module, :__unique_fields__, name)
+      if !opts[:json], do: Module.put_attribute(module, :__fields_to_json__, name)
 
       if is_nil(opts[:update]) || opts[:update] == true,
-        do: Module.put_attribute(module, :update_fields, name)
+        do: Module.put_attribute(module, :__update_fields__, name)
 
-      Module.put_attribute(module, :live_fields, {name, type, opts})
+      Module.put_attribute(module, :__live_fields__, {name, type, opts})
 
       if !!opts[:relation] == false,
         do: Ecto.Schema.__field__(module, name, type, unquote(only_opts))
