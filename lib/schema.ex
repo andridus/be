@@ -172,7 +172,7 @@ defmodule Be.Schema do
       defdelegate pop(coin, key), to: Map
 
       defimpl Jason.Encoder, for: unquote(module) do
-        def encode(struct, opts) do
+        def encode(value, opts) do
           value
           |> Map.drop([:__meta__, :__struct__])
           |> Enum.reject(&match?({_, %Ecto.Association.NotLoaded{}}, &1))
