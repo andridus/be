@@ -30,19 +30,19 @@ defmodule Be.Schema do
     quote do
       module = unquote(module)
       defp maybe_apply_opts(model, field), do: maybe_apply_opts(model, field, :private)
-      def fields_(), do: @live_fields |> Enum.reverse()
-      def assoc_fields(), do: @live_fields |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
-      def fields(), do: @live_fields |> Enum.reverse() |> Enum.map(&elem(&1, 0))
-      def custom_opts(), do: @custom_opts
-      def json(), do: @fields_to_json |> Enum.reverse() |> Kernel.++([:id])
-      def update_fields(), do: @update_fields |> Enum.reverse()
-      def required_fields(), do: @required_fields |> Enum.reverse()
-      def unique_fields(), do: @unique_fields |> Enum.reverse()
+      def __live_fields__(), do: @live_fields |> Enum.reverse()
+      def __assoc_fields__(), do: @live_fields |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
+      def __fields__(), do: @live_fields |> Enum.reverse() |> Enum.map(&elem(&1, 0))
+      def __custom_opts__(), do: @custom_opts
+      def __json__(), do: @fields_to_json |> Enum.reverse() |> Kernel.++([:id])
+      def __update_fields__(), do: @update_fields |> Enum.reverse()
+      def __required_fields__(), do: @required_fields |> Enum.reverse()
+      def __unique_fields__(), do: @unique_fields |> Enum.reverse()
 
       defp changeset_(model, attrs, :insert) do
 
         {local_fields, assoc_fields, embed_fields} =
-          __MODULE__.fields_()
+          __MODULE__.__live_fields__()
           |> Enum.reduce({[], [], []}, fn
             {_, :relation_type, _} = item, {fld, assc, embd} -> {fld, [item | assc], embd}
             {_, :embed, _} = item, {fld, assc, embd} -> {fld, assc, [item | embd]}
@@ -54,10 +54,10 @@ defmodule Be.Schema do
         attrs = local_fields |> Enum.reverse() |> precast(attrs)
 
         flds =
-          Enum.reduce(assoc_keys ++ embed_keys, fields(), fn k, acc -> List.delete(acc, k) end)
+          Enum.reduce(assoc_keys ++ embed_keys, __fields__(), fn k, acc -> List.delete(acc, k) end)
 
         rfs =
-          required_fields()
+          __required_fields__()
           |> Enum.reduce([], fn
             {field, true}, acc ->
               [field | acc]
@@ -92,11 +92,11 @@ defmodule Be.Schema do
           |> validate_required(rfs)
 
         model =
-          Enum.reduce(unique_fields(), model, fn field, model ->
+          Enum.reduce(__unique_fields__(), model, fn field, model ->
             unique_constraint(model, field)
           end)
 
-        Enum.reduce(fields_(), model, fn field, model ->
+        Enum.reduce(__live_fields__(), model, fn field, model ->
           maybe_apply_opts(model, field)
         end)
         model = %{model | action: :insert}
@@ -107,7 +107,7 @@ defmodule Be.Schema do
         keys = Map.keys(attrs)
 
         {local_fields, assoc_fields, embed_fields} =
-          __MODULE__.fields_()
+          __MODULE__.__live_fields__()
           # |> Enum.filter(fn
           #   {key, _, _} ->
           #     key in keys
@@ -124,10 +124,10 @@ defmodule Be.Schema do
         attrs = local_fields |> Enum.reverse() |> precast(attrs)
 
         flds =
-          Enum.reduce(assoc_keys ++ embed_keys, fields(), fn k, acc -> List.delete(acc, k) end)
+          Enum.reduce(assoc_keys ++ embed_keys, __fields__(), fn k, acc -> List.delete(acc, k) end)
 
         rfs =
-          required_fields()
+          __required_fields__()
           |> Enum.reduce([], fn
             {field, true}, acc ->
               [field | acc]
@@ -155,12 +155,12 @@ defmodule Be.Schema do
           end)
 
         model =
-          Enum.reduce(unique_fields(), model, fn field, model ->
+          Enum.reduce(__unique_fields__(), model, fn field, model ->
             unique_constraint(model, field)
           end)
 
         model =
-          Enum.reduce(fields_(), model, fn field, model ->
+          Enum.reduce(__live_fields__(), model, fn field, model ->
             maybe_apply_opts(model, field)
           end)
         model = %{model | action: :update}
@@ -173,7 +173,7 @@ defmodule Be.Schema do
 
       defimpl Jason.Encoder, for: unquote(module) do
         def encode(struct, opts) do
-          value = map_excluded_unload_assoc(struct,unquote(module).fields() ++ [:id])
+          value = map_excluded_unload_assoc(struct,unquote(module).__fields__() ++ [:id])
           Jason.Encode.map(value, opts)
 
         end
@@ -188,7 +188,7 @@ defmodule Be.Schema do
     Map.take(struct, fields)
     |> Map.to_list()
     |> Enum.reduce([], fn {k, v} = kv, acc->
-      if k in struct.__struct__.assoc_fields() do
+      if k in struct.__struct__.__assoc_fields__() do
         cond do
           is_list(v) -> [kv | acc]
           is_map(v) && v != %Ecto.Association.NotLoaded{} && Map.get(v, :__struct__) == nil -> [kv | acc]

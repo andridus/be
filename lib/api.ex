@@ -12,7 +12,7 @@ defmodule Be.Api do
       end
 
       def json_fields(append) do
-        schema().json() ++ append
+        schema().__json__() ++ append
       end
 
       def get_by(params \\ [where: [], order: [asc: :inserted_at]]) do
