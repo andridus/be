@@ -77,6 +77,10 @@ defmodule Be.Api do
         params = Map.drop(model, [:id])
         __update_model__(id, params)
       end
+      def update(id, params) when is_bitstring(id), do: __update_model__(id, params)
+      def update(%{id: id}, params) when is_bitstring(id), do: __update_model__(id, params)
+      def update(_invalid_model, _params), do: {:error, :invalid_model}
+
       defp __update_model__(id, params) do
         id
         |> get!()
