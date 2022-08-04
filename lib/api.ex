@@ -30,7 +30,7 @@ defmodule Be.Api do
       end
 
       def get(_id, _params \\ [where: [], order: [asc: :inserted_at]])
-      def get(nil, _params), {:error, :id_is_nil}
+      def get(nil, _params), do: {:error, :id_is_nil}
       def get(id, params ) do
         get!(id, params)
         |> case do
