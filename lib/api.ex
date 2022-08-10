@@ -163,6 +163,7 @@ defmodule Be.Api do
               dynamic([p], field(p, ^key) == ^value and ^conditions)
             end
         end)
+        |> Kernel.or([])
       end
 
       def count(params \\ []) do
