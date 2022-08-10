@@ -97,40 +97,11 @@ defmodule Be.Api do
         params
         |> Enum.reduce(sch, fn
           {:where, params}, sch ->
-            params =
-              Enum.reduce(params, sch, fn
-                {{:ilike, key}, value}, sch ->
-                  value = "%#{value}%"
-                  sch |> where([p], ilike(field(p, ^key), ^value))
-
-                {{:in, key}, value}, sch ->
-                  sch |> where([p], field(p, ^key) in ^value)
-
-                {key, nil}, sch ->
-                  sch |> where([p], is_nil(field(p, ^key)))
-
-                x, sch ->
-                  sch |> where(^Keyword.new([x]))
-              end)
-            {:or_where, params}, sch ->
-              params =
-                Enum.reduce(params, sch, fn
-                  {{:ilike, key}, value}, sch ->
-                    value = "%#{value}%"
-                    sch |> or_where([p], ilike(field(p, ^key), ^value))
-
-                  {{:in, key}, value}, sch ->
-                    sch |> or_where([p], field(p, ^key) in ^value)
-
-                  {key, nil}, sch ->
-                    sch |> or_where([p], is_nil(field(p, ^key)))
-
-                  x, sch ->
-                    sch |> or_where(^Keyword.new([x]))
-                end)
+            sch |> where(^default_conditions(params))
+          {:or_where, params}, sch ->
+            sch |> or_where(^default_conditions(params))
           {:order, params}, sch ->
             sch |> order_by(^params)
-
           {:preload, params}, sch ->
             lst = Enum.reduce(params, [], fn
               {k, v}, acc ->
@@ -150,8 +121,47 @@ defmodule Be.Api do
           {:offset, params}, sch ->
             sch |> offset(^params)
 
+          {:inspect, true}, sch ->
+              IO.inspect(sch)
           _, sch ->
             sch
+        end)
+      end
+
+      defp default_conditions(params) do
+        Enum.reduce(params, nil, fn
+          {{:ilike, key}, value}, conditions ->
+            value = "%#{value}%"
+            if is_nil(conditions) do
+              dynamic([p], ilike(field(p, ^key), ^value))
+            else
+              dynamic([p], ilike(field(p, ^key), ^value) and ^conditions)
+            end
+          {{:in, key}, value}, conditions ->
+            if is_nil(conditions) do
+              dynamic([p], field(p, ^key) in ^value)
+            else
+              dynamic([p], field(p, ^key) in ^value and ^conditions)
+            end
+          {:not_nil, key}, conditions ->
+            if is_nil(conditions) do
+              dynamic([p], not is_nil(field(p, ^key)))
+            else
+              dynamic([p], not is_nil(field(p, ^key)) and ^conditions)
+            end
+          {key, nil}, conditions ->
+            if is_nil(conditions) do
+              dynamic([p], is_nil(field(p, ^key)))
+            else
+              dynamic([p], is_nil(field(p, ^key)) and ^conditions)
+            end
+
+          {key, value}, conditions ->
+            if is_nil(conditions) do
+              dynamic([p], field(p, ^key) == ^value)
+            else
+              dynamic([p], field(p, ^key) == ^value and ^conditions)
+            end
         end)
       end
 
