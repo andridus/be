@@ -518,8 +518,9 @@ defmodule Be.View do
     module = socket.assigns.__module__
     call_event_priv(socket, %{id: socket.assigns[:id], module: module, event: event, opts: opts})
   end
+  def run_effect(socket, _), do: socket
 
-  defp call_event_priv(socket, %{id: nil, module: module, event: event, opts: opts}) do
+  defp call_event_priv(socket, %{id: nil, module: _module, event: event, opts: opts}) do
     case opts[:every] do
       nil ->
         Process.send_after(self(), {event, __opts__: opts}, 0)
@@ -544,7 +545,7 @@ defmodule Be.View do
 
 
 
-  def run_effect(socket, _), do: socket
+
 
   def get_opts(fields, field, key_opt, default \\ nil) do
     Enum.find(fields, fn {key, _, _} -> key == field end)
@@ -571,7 +572,7 @@ defmodule Be.View do
 
   def get_paths(uri, params \\ %{}) do
     %URI{path: path} = URI.parse(uri)
-    {current, previous} =
+    {current, _previous} =
       String.split(path, "/")
       |> Enum.reverse()
       |> case do
