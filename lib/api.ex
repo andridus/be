@@ -171,16 +171,16 @@ defmodule Be.Api do
 
           {{:ago, key}, {value, opt}}, conditions ->
             if is_nil(conditions) do
-              dynamic([p], ago(field(p, ^key)), ^value, ^opt)
+              dynamic([p], ago(field(p, ^key), ^value, ^opt))
             else
-              dynamic([p], ago(field(p, ^key)), ^value, ^opt and ^conditions)
+              dynamic([p], ago(field(p, ^key), ^value, ^opt) and ^conditions)
             end
 
           {{:date_add, key}, {value, opt}}, conditions ->
               if is_nil(conditions) do
-                dynamic([p], date_add(field(p, ^key)), ^value, ^opt)
+                dynamic([p], date_add(field(p, ^key), ^value, ^opt))
               else
-                dynamic([p], date_add(field(p, ^key)), ^value, ^opt and ^conditions)
+                dynamic([p], date_add(field(p, ^key), ^value, ^opt) and ^conditions)
               end
           {{:datetime_add, key}, {value, opt}}, conditions ->
             if is_nil(conditions) do
