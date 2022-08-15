@@ -169,25 +169,25 @@ defmodule Be.Api do
               dynamic([p], field(p, ^key) in ^value and ^conditions)
             end
 
-          {{:ago, key}, {value, opt}}, conditions ->
-            if is_nil(conditions) do
-              dynamic([p], ago(field(p, ^key), ^value, ^opt))
-            else
-              dynamic([p], ago(field(p, ^key), ^value, ^opt) and ^conditions)
-            end
+          # {{:ago, key}, {value, opt}}, conditions ->
+          #   if is_nil(conditions) do
+          #     dynamic([p], ago(field(p, ^key), ^value, ^opt))
+          #   else
+          #     dynamic([p], ago(field(p, ^key), ^value, ^opt) and ^conditions)
+          #   end
 
-          {{:date_add, key}, {value, opt}}, conditions ->
-              if is_nil(conditions) do
-                dynamic([p], date_add(field(p, ^key), ^value, ^opt))
-              else
-                dynamic([p], date_add(field(p, ^key), ^value, ^opt) and ^conditions)
-              end
-          {{:datetime_add, key}, {value, opt}}, conditions ->
-            if is_nil(conditions) do
-              dynamic([p], datetime_add(field(p, ^key), ^value, ^opt))
-            else
-              dynamic([p], datetime_add(field(p, ^key), ^value, ^opt) and ^conditions)
-            end
+          # {{:date_add, key}, {value, opt}}, conditions ->
+          #     if is_nil(conditions) do
+          #       dynamic([p], date_add(field(p, ^key), ^value, ^opt))
+          #     else
+          #       dynamic([p], date_add(field(p, ^key), ^value, ^opt) and ^conditions)
+          #     end
+          # {{:datetime_add, key}, {value, opt}}, conditions ->
+          #   if is_nil(conditions) do
+          #     dynamic([p], datetime_add(field(p, ^key), ^value, ^opt))
+          #   else
+          #     dynamic([p], datetime_add(field(p, ^key), ^value, ^opt) and ^conditions)
+          #   end
           {:not_nil, key}, conditions ->
             if is_nil(conditions) do
               dynamic([p], not is_nil(field(p, ^key)))
