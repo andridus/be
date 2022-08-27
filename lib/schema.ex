@@ -1,7 +1,7 @@
 defmodule Be.Schema do
   @moduledoc false
 
-  @live_opts [:required, :unique, :update,  :size, :set_once, :to_json, :label, :opts, :applies, :validate]
+  @live_opts [:required, :unique, :update,  :size, :set_once, :to_json, :label, :opts, :applies, :validate, :precast]
   @relation_opts @live_opts ++ [ :show, :show_in_form, :parent_field, :form, :options, :class, :relation, :assoc, :default, :schema ]
 
   defmacro __using__(_) do
