@@ -1,8 +1,32 @@
 defmodule Be.Schema do
   @moduledoc false
 
-  @live_opts [:required, :unique, :update,  :size, :set_once, :to_json, :label, :opts, :applies, :validate, :precast]
-  @relation_opts @live_opts ++ [ :show, :show_in_form, :parent_field, :form, :options, :class, :relation, :assoc, :default, :schema ]
+  @live_opts [
+    :required,
+    :unique,
+    :update,
+    :size,
+    :set_once,
+    :to_json,
+    :label,
+    :opts,
+    :applies,
+    :validate,
+    :precast
+  ]
+  @relation_opts @live_opts ++
+                   [
+                     :show,
+                     :show_in_form,
+                     :parent_field,
+                     :form,
+                     :options,
+                     :class,
+                     :relation,
+                     :assoc,
+                     :default,
+                     :schema
+                   ]
 
   defmacro __using__(_) do
     quote do
@@ -22,7 +46,6 @@ defmodule Be.Schema do
       @foreign_key_type :binary_id
 
       # Structs by default do not implement this. It's easy to delegate this to the Map implementation however.
-
     end
   end
 
@@ -31,7 +54,10 @@ defmodule Be.Schema do
       module = unquote(module)
       defp maybe_apply_opts(model, field), do: maybe_apply_opts(model, field, :private)
       def __live_fields__(), do: @__live_fields__ |> Enum.reverse()
-      def __assoc_fields__(), do: @__live_fields__ |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
+
+      def __assoc_fields__(),
+        do: @__live_fields__ |> Enum.filter(&elem(&1, 2)[:assoc]) |> Enum.map(&elem(&1, 0))
+
       def __fields__(), do: @__live_fields__ |> Enum.reverse() |> Enum.map(&elem(&1, 0))
       def __custom_opts__(), do: @__custom_opts__
       def __json__(), do: @__fields_to_json__ |> Enum.reverse() |> Kernel.++([:id])
@@ -40,7 +66,6 @@ defmodule Be.Schema do
       def __unique_fields__(), do: @__unique_fields__ |> Enum.reverse()
 
       defp changeset_(model, attrs, :insert) do
-
         {local_fields, assoc_fields, embed_fields} =
           __MODULE__.__live_fields__()
           |> Enum.reduce({[], [], []}, fn
@@ -99,11 +124,11 @@ defmodule Be.Schema do
         Enum.reduce(__live_fields__(), model, fn field, model ->
           maybe_apply_opts(model, field)
         end)
+
         model = %{model | action: :insert}
       end
 
       defp changeset_(model, attrs, :update) do
-
         keys = Map.keys(attrs)
 
         {local_fields, assoc_fields, embed_fields} =
@@ -163,6 +188,7 @@ defmodule Be.Schema do
           Enum.reduce(__live_fields__(), model, fn field, model ->
             maybe_apply_opts(model, field)
           end)
+
         model = %{model | action: :update}
       end
 
@@ -179,6 +205,7 @@ defmodule Be.Schema do
           |> Jason.Encode.keyword(opts)
         end
       end
+
       defimpl Phoenix.HTML.Safe, for: __MODULE__ do
         def to_iodata(data), do: Map.get(data, :id)
       end
@@ -188,22 +215,28 @@ defmodule Be.Schema do
   def map_excluded_unload_assoc(struct, fields) do
     Map.take(struct, fields)
     |> Map.to_list()
-    |> Enum.reduce([], fn {k, v} = kv, acc->
+    |> Enum.reduce([], fn {k, v} = kv, acc ->
       if k in struct.__struct__.__assoc_fields__() do
         cond do
-          is_list(v) -> [kv | acc]
-          is_map(v) && v != %Ecto.Association.NotLoaded{} && Map.get(v, :__struct__) == nil -> [kv | acc]
-          is_map(v) && Ecto.assoc_loaded?(struct[k]) -> [kv | acc]
-          :else -> acc
-        end
+          is_list(v) ->
+            [kv | acc]
 
+          is_map(v) && v != %Ecto.Association.NotLoaded{} && Map.get(v, :__struct__) == nil ->
+            [kv | acc]
+
+          is_map(v) && Ecto.assoc_loaded?(struct[k]) ->
+            [kv | acc]
+
+          :else ->
+            acc
+        end
       else
         [kv | acc]
       end
     end)
     |> Map.new()
-
   end
+
   defmacro many_to_many_(name, queryable, opts \\ []) do
     queryable = expand_alias(queryable, __CALLER__)
     opts = expand_alias_in_key(opts, :join_through, __CALLER__)
@@ -307,16 +340,9 @@ defmodule Be.Schema do
     queryable = expand_alias(queryable, __CALLER__)
     opts = opts ++ [default: nil, schema: queryable]
     only_opts = get_opts(opts, @relation_opts)
-    show_in_form = opts[:show_in_form] || false
 
     quote do
-      if unquote(show_in_form),
-        do:
-          Module.put_attribute(
-            __MODULE__,
-            :__live_fields__,
-            {unquote(name), :embed, unquote(opts) ++ [schema: unquote(queryable)]}
-          )
+      Module.put_attribute(__MODULE__, :__live_fields__, {unquote(name), :embed, unquote(opts)})
 
       field = {:embeds_one, unquote(name), unquote(queryable), unquote(opts)}
 
@@ -330,17 +356,23 @@ defmodule Be.Schema do
   end
 
   defmacro timestamps_(opts \\ []) do
-    quote  do
+    quote do
       timestamps = Keyword.merge(@timestamps_opts, unquote(opts))
       inserted_at = Keyword.get(timestamps, :inserted_at, :inserted_at)
       updated_at = Keyword.get(timestamps, :updated_at, :updated_at)
 
-      Module.put_attribute( __MODULE__,:__live_fields__,
-            {inserted_at, :timestamp, [timestamp: true]}
-          )
-      Module.put_attribute( __MODULE__,:__live_fields__,
-            {updated_at, :timestamp, [timestamp: true]}
-          )
+      Module.put_attribute(
+        __MODULE__,
+        :__live_fields__,
+        {inserted_at, :timestamp, [timestamp: true]}
+      )
+
+      Module.put_attribute(
+        __MODULE__,
+        :__live_fields__,
+        {updated_at, :timestamp, [timestamp: true]}
+      )
+
       timestamps()
     end
   end
@@ -382,13 +414,14 @@ defmodule Be.Schema do
   defp get_opts(opts, default \\ @live_opts) do
     removable_fields =
       Keyword.keys(opts)
-      |> Enum.filter(&(
-        &1
-        |> to_string()
-        |> String.starts_with?("_")
-      ))
+      |> Enum.filter(
+        &(&1
+          |> to_string()
+          |> String.starts_with?("_"))
+      )
       |> Kernel.++(default)
       |> Enum.uniq()
+
     Keyword.drop(opts, removable_fields)
   end
 
@@ -444,5 +477,4 @@ defmodule Be.Schema do
       opts
     end
   end
-
 end

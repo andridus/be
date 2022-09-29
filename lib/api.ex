@@ -31,7 +31,8 @@ defmodule Be.Api do
 
       def get(_id, _params \\ [where: [], order: [asc: :inserted_at]])
       def get(nil, _params), do: {:error, :id_is_nil}
-      def get(id, params ) do
+
+      def get(id, params) do
         get!(id, params)
         |> case do
           nil -> {:error, :not_found}
@@ -55,12 +56,14 @@ defmodule Be.Api do
 
       def insert(%Ecto.Changeset{} = model),
         do: model |> repo().insert()
+
       def insert(params) do
         schema()
         |> struct()
         |> schema().changeset_insert(params)
         |> repo().insert()
       end
+
       def exists?(params) do
         params
         |> default_params()
@@ -69,14 +72,17 @@ defmodule Be.Api do
 
       def update(%Ecto.Changeset{} = model),
         do: model |> repo().update()
+
       def update(%{"id" => id} = model) do
         params = Map.drop(model, ["id"])
         __update_model__(id, params)
       end
+
       def update(%{id: id} = model) do
         params = Map.drop(model, [:id])
         __update_model__(id, params)
       end
+
       def update(id, params) when is_bitstring(id), do: __update_model__(id, params)
       def update(%{id: id}, params) when is_bitstring(id), do: __update_model__(id, params)
       def update(_invalid_model, _params), do: {:error, :invalid_model}
@@ -90,26 +96,35 @@ defmodule Be.Api do
 
       def delete(id) when is_bitstring(id),
         do: id |> get!() |> delete()
+
       def delete(model), do: model |> repo().delete()
 
       def default_params(params, sc \\ nil) do
         sch = from(sc || schema())
+
         params
         |> Enum.reduce(sch, fn
           {:where, params}, sch ->
             sch |> where(^default_conditions(params))
+
           {:or_where, params}, sch ->
             sch |> or_where(^default_conditions(params))
+
           {:order, params}, sch ->
             sch |> order_by(^params)
+
           {:preload, params}, sch ->
-            lst = Enum.reduce(params, [], fn
-              {k, v}, acc ->
-                {_k, _t, opts} = schema().__live_fields__() |> List.keyfind!(k,0)
-                [{k, default_params(v, opts[:schema])} | acc]
-              k, acc when is_atom(k) ->
-                [k | acc]
-            end) |> Enum.reverse()
+            lst =
+              Enum.reduce(params, [], fn
+                {k, v}, acc ->
+                  {_k, _t, opts} = schema().__live_fields__() |> List.keyfind!(k, 0)
+                  [{k, default_params(v, opts[:schema])} | acc]
+
+                k, acc when is_atom(k) ->
+                  [k | acc]
+              end)
+              |> Enum.reverse()
+
             sch |> preload(^lst)
 
           {:select, params}, sch ->
@@ -122,7 +137,8 @@ defmodule Be.Api do
             sch |> offset(^params)
 
           {:inspect, true}, sch ->
-              IO.inspect(sch)
+            IO.inspect(sch)
+
           _, sch ->
             sch
         end)
@@ -136,18 +152,21 @@ defmodule Be.Api do
             else
               dynamic([p], field(p, ^key) < ^value and ^conditions)
             end
+
           {{:elt, key}, value}, conditions ->
             if is_nil(conditions) do
               dynamic([p], field(p, ^key) <= ^value)
             else
               dynamic([p], field(p, ^key) <= ^value and ^conditions)
             end
+
           {{:gt, key}, value}, conditions ->
             if is_nil(conditions) do
               dynamic([p], field(p, ^key) >= ^value)
             else
               dynamic([p], field(p, ^key) >= ^value and ^conditions)
             end
+
           {{:egt, key}, value}, conditions ->
             if is_nil(conditions) do
               dynamic([p], field(p, ^key) > ^value)
@@ -157,11 +176,13 @@ defmodule Be.Api do
 
           {{:ilike, key}, value}, conditions ->
             value = "%#{value}%"
+
             if is_nil(conditions) do
               dynamic([p], ilike(field(p, ^key), ^value))
             else
               dynamic([p], ilike(field(p, ^key), ^value) and ^conditions)
             end
+
           {{:in, key}, value}, conditions ->
             if is_nil(conditions) do
               dynamic([p], field(p, ^key) in ^value)
@@ -194,6 +215,7 @@ defmodule Be.Api do
             else
               dynamic([p], not is_nil(field(p, ^key)) and ^conditions)
             end
+
           {key, nil}, conditions ->
             if is_nil(conditions) do
               dynamic([p], is_nil(field(p, ^key)))
@@ -222,6 +244,7 @@ defmodule Be.Api do
       """
       def json(_model, _include \\ [])
       def json(nil, _), do: nil
+
       def json(model, include) do
         model
         |> preload_json(include)
@@ -229,11 +252,25 @@ defmodule Be.Api do
       end
 
       def insert_or_update(%Ecto.Changeset{action: :insert} = model), do: insert(model)
-      def insert_or_update(%Ecto.Changeset{action: :update, data: %{id: _id}} = model), do: update(model)
+
+      def insert_or_update(%Ecto.Changeset{action: :update, data: %{id: _id}} = model),
+        do: update(model)
+
       def insert_or_update(%{id: id} = model) when not is_nil(id), do: update(model)
       def insert_or_update(model), do: insert(model)
 
-      defoverridable [changeset: 2, changeset: 3, json_fields: 1, get: 1, get: 2, get_by: 1, all: 1, insert: 1, update: 1, delete: 1, json: 2, count: 1]
+      defoverridable changeset: 2,
+                     changeset: 3,
+                     json_fields: 1,
+                     get: 1,
+                     get: 2,
+                     get_by: 1,
+                     all: 1,
+                     insert: 1,
+                     update: 1,
+                     delete: 1,
+                     json: 2,
+                     count: 1
     end
   end
 
@@ -246,6 +283,7 @@ defmodule Be.Api do
     |> Map.to_list()
     |> Enum.map(fn {key, value} ->
       module = get_module(model, key, include)
+
       if is_list(value) do
         {key, Enum.map(value, &(apply(module, :json, [&1]) |> unwrap()))}
       else
@@ -253,7 +291,7 @@ defmodule Be.Api do
       end
     end)
     |> Map.new()
-    |> then(& Map.merge(model, &1))
+    |> then(&Map.merge(model, &1))
   end
 
   def get_module(model, key, _includes) do

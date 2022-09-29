@@ -33,6 +33,7 @@ defmodule Be.Component do
            |> apply_default_fields()}
         end
       end
+
     postlude =
       quote do
         @doc false

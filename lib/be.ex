@@ -1,8 +1,8 @@
 defmodule Be do
-
   def unique(len) do
     gen_rnd(len, "abcdefghijklmnopqrstuvwxyz1234567890")
   end
+
   defp gen_rnd(to, al) do
     # DateTime.utc_now |> DateTime.to_unix(:millisecond)
     len = String.length(al)

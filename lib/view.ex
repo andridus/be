@@ -2,6 +2,7 @@ defmodule Be.View do
   @moduledoc false
 
   alias Phoenix.LiveView
+
   defmacro __using__(opts) do
     quote do
       use Phoenix.LiveView, unquote(opts)
@@ -19,6 +20,7 @@ defmodule Be.View do
       @before_compile Be.View
     end
   end
+
   defmacro __before_compile__(env) do
     [init_component(env)]
   end
@@ -28,7 +30,12 @@ defmodule Be.View do
       quote do
         @doc false
         def mount(params, session, socket) do
-          state = Map.merge(%{__params__: params, __session__: session["_csrf_token"]}, parse_fields(@fields))
+          state =
+            Map.merge(
+              %{__params__: params, __session__: session["_csrf_token"]},
+              parse_fields(@fields)
+            )
+
           socket =
             socket
             |> assign(:__fields__, @fields)
@@ -38,12 +45,12 @@ defmodule Be.View do
             |> assign(:run_once, false)
             |> apply_default_fields()
             |> apply_effects(@effects)
+
           {:ok,
            socket
-           |> apply_command({:javascript, {:__main__,[state]}}, @commands, @javascripts)
-           |> apply_command({:javascript, {:__svelte__,[state]}}, @commands, @javascripts)}
+           |> apply_command({:javascript, {:__main__, [state]}}, @commands, @javascripts)
+           |> apply_command({:javascript, {:__svelte__, [state]}}, @commands, @javascripts)}
         end
-
       end
 
     postlude =
@@ -55,10 +62,12 @@ defmodule Be.View do
           path = uri |> get_paths(params)
           {:noreply, assign(socket, __path__: path)}
         end
+
         @doc false
         defp handle_event_with_params(event, params, socket) do
           event = if is_atom(event), do: event, else: String.to_atom(event)
           func = Keyword.get(@events, event)
+
           case is_function(func, 2) && func.(socket.assigns, params) do
             {data, command} ->
               ## clean cant change assigns
@@ -66,20 +75,21 @@ defmodule Be.View do
               socket =
                 data
                 |> clean_assigns()
-                |> then(& assign(socket, &1))
+                |> then(&assign(socket, &1))
                 |> apply_command(command, @commands, @javascripts)
+
               {clean_assigns(socket.assigns), socket}
 
             data when is_map(data) ->
               {clean_assigns(data), socket}
+
             false ->
               {clean_assigns(socket.assigns), socket}
           end
         end
 
         def handle_event(event, params, socket) do
-          {assigns, socket} =
-            handle_event_with_params(event, params, socket)
+          {assigns, socket} = handle_event_with_params(event, params, socket)
           {:noreply, assign(socket, assigns)}
         end
 
@@ -87,11 +97,14 @@ defmodule Be.View do
           opts = params[:__opts__] || []
           func = Keyword.get(@events, event)
           {assigns, socket} = handle_event_with_params(event, params, socket)
+
           if opts[:effect] == true && opts[:every] do
             Process.send_after(self(), {event, __opts__: opts}, opts[:every])
           end
+
           {:noreply, assign(socket, assigns)}
         end
+
         def handle_params(_handled, _params, socket) do
           {:noreply, socket}
         end
@@ -105,14 +118,21 @@ defmodule Be.View do
             [_, module, "undefined", atom] ->
               module = module |> String.split("_") |> Module.concat()
               Process.send(self(), {String.to_atom(atom), payload}, [])
+
             [_, module, id, atom] ->
               module
               |> String.split("_")
               |> Module.concat()
-              |> LiveView.send_update(id: id, __port__: String.to_atom(atom), __payload__: payload)
+              |> LiveView.send_update(
+                id: id,
+                __port__: String.to_atom(atom),
+                __payload__: payload
+              )
+
             _ ->
               nil
           end
+
           {:noreply, socket}
         end
       end
@@ -126,6 +146,7 @@ defmodule Be.View do
   def call_event(event, args \\ %{}) do
     send(self(), {event, args})
   end
+
   def clean_assigns(assigns) do
     assigns |> Map.drop([:flash, :__event__, :__opts__])
   end
@@ -135,6 +156,7 @@ defmodule Be.View do
   """
   defmacro sigil_J({:<<>>, meta, [template]}, []) do
     ast = EEx.compile_string(template, line: meta[:line] + 1)
+
     quote line: meta[:line] do
       unquote(ast)
     end
@@ -144,10 +166,9 @@ defmodule Be.View do
     for {key, _field, opts} <- fields, into: %{}, do: {key, opts[:default]}
   end
 
-
   def header(npm_imports \\ []) do
     """
-    #{Enum.map(npm_imports, &("import " <> &1 <>";\n"))}
+    #{Enum.map(npm_imports, &("import " <> &1 <> ";\n"))}
     \n
     /*
     This file was generated automatically don't change it manually.
@@ -169,11 +190,14 @@ defmodule Be.View do
     content =
       if opts[:file] do
         dir = Path.dirname(__CALLER__.file)
-        file = Path.join([dir, opts[:file]<>".js"])
+        file = Path.join([dir, opts[:file] <> ".js"])
+
         file
         |> File.read()
         |> case do
-          {:ok, content} -> content
+          {:ok, content} ->
+            content
+
           _ ->
             IO.warn("the '#{dir}' not have a js file with the filename '#{Path.basename(file)}'")
             nil
@@ -194,7 +218,10 @@ defmodule Be.View do
       cnt = unquote(content)
       prefix = parse_prefix(__MODULE__)
       hash = "#{prefix}_#{name}"
-      js_output_dir = Path.join([Application.get_env(:be, :assets_path, File.cwd!()), "assets/js/be/"])
+
+      js_output_dir =
+        Path.join([Application.get_env(:be, :assets_path, File.cwd!()), "assets/js/be/"])
+
       File.mkdir_p!(js_output_dir)
       dest_file = Path.join([js_output_dir, "#{hash}.js"])
       index_file = Path.join([js_output_dir, "index.js"])
@@ -210,6 +237,7 @@ defmodule Be.View do
 
       delimiter_start = "/****** #{prefix}_#{name} START****/"
       delimiter_end = "/****** #{prefix}_#{name} END****/"
+
       content_index = [
         delimiter_start,
         "import #{prefix}_#{name} from './#{hash}';",
@@ -217,20 +245,20 @@ defmodule Be.View do
         delimiter_end
       ]
 
-
       if !File.exists?(index_file), do: File.touch!(index_file)
       src = File.read!(index_file)
       c = content_index |> Enum.join()
       c = String.replace(src, c, "")
 
-      String.splitter(src,[delimiter_start, delimiter_end])
-        |> Enum.take(3)
-        |> case do
-          [h,c,e]  ->
-            File.write!(index_file, [h, content_index, e] |> List.flatten())
-          _ ->
-            File.write!(index_file, [c, content_index, "\n"] |> List.flatten())
-        end
+      String.splitter(src, [delimiter_start, delimiter_end])
+      |> Enum.take(3)
+      |> case do
+        [h, c, e] ->
+          File.write!(index_file, [h, content_index, e] |> List.flatten())
+
+        _ ->
+          File.write!(index_file, [c, content_index, "\n"] |> List.flatten())
+      end
 
       File.write!(dest_file, content)
       Module.put_attribute(__MODULE__, :javascripts, {name, "#{hash}", unquote(args)})
@@ -238,35 +266,45 @@ defmodule Be.View do
   end
 
   defmacro svelte(dom_id, opts \\ []) do
-
     {content, file} =
       case opts[:do] do
         nil ->
           file = String.replace(__CALLER__.file, ".ex", ".svelte")
+
           file
           |> File.read()
           |> case do
-            {:ok, content} -> {content, file}
+            {:ok, content} ->
+              {content, file}
+
             _ ->
-              IO.warn("the '#{Path.basename(__CALLER__.file)}' that have a 'svelte' function needs have a content into function or to be placed into a '.svelte' file with the filename '#{Path.basename(file)}'")
+              IO.warn(
+                "the '#{Path.basename(__CALLER__.file)}' that have a 'svelte' function needs have a content into function or to be placed into a '.svelte' file with the filename '#{Path.basename(file)}'"
+              )
+
               {nil, nil}
           end
-        content -> {content, nil}
+
+        content ->
+          {content, nil}
       end
+
     quote do
       cnt = unquote(content)
       file = unquote(file)
+
       if cnt do
         name = "__svelte__"
         dom = unquote(dom_id)
         prefix = String.split("#{__MODULE__}", ".") |> Enum.join("_")
         hash = "#{prefix}_svelte"
-        js_output_dir = Path.join([ File.cwd!(), "assets/js/be"])
+        js_output_dir = Path.join([File.cwd!(), "assets/js/be"])
         File.mkdir_p!(js_output_dir)
         dest_file = Path.join([js_output_dir, "#{hash}.svelte"])
         index_file = Path.join([js_output_dir, "index.js"])
         delimiter_start = "/****** #{prefix}_#{name} START****/"
         delimiter_end = "/****** #{prefix}_#{name} END****/"
+
         content_index = [
           delimiter_start,
           "import #{prefix}_#{name} from './#{hash}.svelte';",
@@ -279,32 +317,35 @@ defmodule Be.View do
         c = content_index |> Enum.join()
         c = String.replace(src, c, "")
 
-        String.splitter(src,[delimiter_start, delimiter_end])
+        String.splitter(src, [delimiter_start, delimiter_end])
         |> Enum.take(3)
         |> case do
-          [h,c,e]  ->
+          [h, c, e] ->
             File.write!(index_file, [h, content_index, e] |> List.flatten())
+
           _ ->
             File.write!(index_file, [c, content_index, "\n"] |> List.flatten())
         end
 
-
-        String.splitter(cnt,["<script>"])
+        String.splitter(cnt, ["<script>"])
         |> Enum.take(2)
         |> case do
-          [h,e]  ->
+          [h, e] ->
             File.write!(dest_file, ["<script>", header_functions(prefix), e] |> List.flatten())
+
           _ ->
             File.write!(dest_file, [cnt] |> List.flatten())
         end
+
         Module.put_attribute(__MODULE__, :javascripts, {:__svelte__, "#{hash}", [:state]})
       end
     end
   end
 
   defmacro event(mfld, opts \\ []) do
-    funct_0 = {:&, [],[{:/, [],[{{:., [], [{:__MODULE__, [], nil}, mfld]},[], []},2]}]}
+    funct_0 = {:&, [], [{:/, [], [{{:., [], [{:__MODULE__, [], nil}, mfld]}, [], []}, 2]}]}
     funct = opts[:do] || funct_0
+
     quote do
       Module.put_attribute(__MODULE__, :events, {unquote(mfld), unquote(funct)})
     end
@@ -344,9 +385,11 @@ defmodule Be.View do
         {atom, args} -> {atom, args, 2}
         atom -> {atom, [], 1}
       end
-    funct = {:&, [],[{:/, [],[{{:., [], [{:__MODULE__, [], nil}, atom]},[], []}, total_args]}]}
+
+    funct = {:&, [], [{:/, [], [{{:., [], [{:__MODULE__, [], nil}, atom]}, [], []}, total_args]}]}
     opts = Keyword.put_new(opts, :do, funct)
     cmd = {atom, args}
+
     quote do
       Module.put_attribute(__MODULE__, :commands, {unquote(cmd), unquote(opts)})
     end
@@ -464,11 +507,12 @@ defmodule Be.View do
   end
 
   def apply_command(socket, {:push_event, event}, _c, _j) do
-    module =  parse_prefix(socket.assigns.__module__)
+    module = parse_prefix(socket.assigns.__module__)
     LiveView.push_event(socket, "#{module}:#{event}", %{})
   end
+
   def apply_command(socket, {:push_event, event, params}, _c, _j) do
-    module =  parse_prefix(socket.assigns.__module__)
+    module = parse_prefix(socket.assigns.__module__)
     LiveView.push_event(socket, "#{module}:#{event}", %{data: params})
   end
 
@@ -505,8 +549,6 @@ defmodule Be.View do
     end
   end
 
-
-
   def apply_effects(socket, []), do: socket
 
   def apply_effects(socket, [sub | tail]) do
@@ -518,16 +560,19 @@ defmodule Be.View do
     module = socket.assigns.__module__
     call_event_priv(socket, %{id: socket.assigns[:id], module: module, event: event, opts: opts})
   end
+
   def run_effect(socket, _), do: socket
 
   defp call_event_priv(socket, %{id: nil, module: _module, event: event, opts: opts}) do
     case opts[:every] do
       nil ->
         Process.send_after(self(), {event, __opts__: opts}, 0)
+
       sec ->
         opts = opts ++ [effect: true]
         Process.send_after(self(), {event, __opts__: opts}, sec)
     end
+
     socket
   end
 
@@ -538,14 +583,17 @@ defmodule Be.View do
 
       sec ->
         opts = opts ++ [effect: true]
-        LiveView.send_update_after(self(), module, [id: id, __event__: event, __opts__: opts], sec)
+
+        LiveView.send_update_after(
+          self(),
+          module,
+          [id: id, __event__: event, __opts__: opts],
+          sec
+        )
     end
+
     socket
   end
-
-
-
-
 
   def get_opts(fields, field, key_opt, default \\ nil) do
     Enum.find(fields, fn {key, _, _} -> key == field end)
@@ -566,12 +614,14 @@ defmodule Be.View do
     # replace $() to get_opts() function
     [String.replace(content, "$(", "get_opts(@__fields__, ")]
   end
+
   def c(opts) do
     LiveView.Helpers.live_component(Map.merge(opts, %{id: Be.unique(10)}))
   end
 
   def get_paths(uri, params \\ %{}) do
     %URI{path: path} = URI.parse(uri)
+
     {current, _previous} =
       String.split(path, "/")
       |> Enum.reverse()
