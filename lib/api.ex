@@ -318,4 +318,6 @@ defmodule Be.Api do
   def unwrap({:ok, value}), do: value
   def unwrap(err), do: err
   def unwrap!({_, value}), do: value
+
+  defoverridable repo: 0
 end
