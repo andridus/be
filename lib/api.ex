@@ -54,6 +54,35 @@ defmodule Be.Api do
         |> repo().all()
       end
 
+      @doc """
+        insert_all
+
+        > insert only array of map (not a struct)
+
+        options: 
+        [
+          conflict_target: :column_name | {:unsafe_fragment, binary_fragment}
+          on_conflict: :atom | :tuple (one of :raise, :nothing, :replace_all, {:replace_all_except, fields}, {:replace, fields} )
+          batch: integer (with the number about insert records each step - for many rows)
+        ]
+      """
+      def insert_all(list, options \\ []) do
+        batch = options[:batch]
+        options = options |> Keyword.drop([:batch]) 
+        total = Enum.count(list)
+        if is_nil(batch) do
+          {num, _} = repo().insert_all(schema(), list, options)
+          {:ok, %{total: total, inserted: num, conflicts: total - num}}
+        else
+          num = 
+            list
+            |> Enum.chunk_every()
+            |> Enum.map(& repo().insert_all(schema(), &1, options))
+            |> Enum.reduce(0, fn {num,_}, acc -> acc + num end)
+
+          {:ok, %{total: total, inserted: num, conflicts: total - num}}
+        end
+      end
       def insert(%Ecto.Changeset{} = model),
         do: model |> repo().insert()
 
