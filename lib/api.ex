@@ -55,7 +55,7 @@ defmodule Be.Api do
       end
 
       @doc """
-        insert_all
+        insert_many
 
         > insert only array of map (not a struct)
 
@@ -66,7 +66,7 @@ defmodule Be.Api do
           batch: integer (with the number about insert records each step - for many rows)
         ]
       """
-      def insert_all(list, options \\ []) do
+      def insert_many(list, options \\ []) do
         batch = options[:batch]
         options = options |> Keyword.drop([:batch]) 
         total = Enum.count(list)
