@@ -76,7 +76,7 @@ defmodule Be.Api do
         else
           num = 
             list
-            |> Enum.chunk_every()
+            |> Enum.chunk_every(batch)
             |> Enum.map(& repo().insert_all(schema(), &1, options))
             |> Enum.reduce(0, fn {num,_}, acc -> acc + num end)
 
