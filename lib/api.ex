@@ -123,6 +123,30 @@ defmodule Be.Api do
         |> repo().update()
       end
 
+      def delete_many_by_id(ids, options \\ []) do
+        batch = options[:batch]
+        options = options |> Keyword.drop([:batch]) 
+        total = Enum.count(ids)
+        if is_nil(batch) do
+          {num, _} =
+            [where: [{{:in, :id}, ids}]] 
+            |> default_params()
+            |> repo().delete_all(options)
+          {:ok, %{total: total, deleted: num}}
+        else
+          num = 
+            ids
+            |> Enum.chunk_every(batch)
+            |> Enum.map(fn ids1 -> 
+              [where: [{{:in, :id}, ids1}]] 
+              |> default_params()
+              |> repo().delete_all(options)
+            end)
+            |> Enum.reduce(0, fn {num,_}, acc -> acc + num end)
+
+          {:ok, %{total: total, inserted: num}}
+        end
+      end
       def delete(id) when is_bitstring(id),
         do: id |> get!() |> delete()
 
