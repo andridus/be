@@ -123,7 +123,16 @@ defmodule Be.Api do
         |> repo().update()
       end
 
-      def prepare_to_delete(model), do: schema().changeset_delete(model)
+      def prepare_to_delete(model, opts \\ []), do 
+        schema().changeset_delete(model)
+      rescue
+        _ -> 
+          if is_nil(opts[:error_silent]) do
+            raise "The function `changeset_delete` is not defined for `#{schema()}`."
+          else
+            model
+          end
+      end
       def delete_many_by_id(ids, options \\ []) do
         batch = options[:batch]
         options = options |> Keyword.drop([:batch]) 
