@@ -123,7 +123,7 @@ defmodule Be.Api do
         |> repo().update()
       end
 
-      def prepare_to_delete(model, opts \\ []), do 
+      def prepare_to_delete(model, opts \\ []) do 
         schema().changeset_delete(model)
       rescue
         _ -> 
